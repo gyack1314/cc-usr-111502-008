@@ -1,7 +1,9 @@
 import unittest
-from setwarehouse.identity import hash_identity
+
 from setwarehouse.exact import Exact
 from setwarehouse.fragments import Fragments
+from setwarehouse.identity import hash_identity
+
 
 class CoreTests(unittest.TestCase):
     def test_identity_domain_and_null_exclusion(self):
@@ -28,4 +30,12 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             fragments.accept('b', 's2', {})
         fragments.accept('b', 's1', {'rows': 3})
-        self.assertEqual(fragments.states(), [{'rows': 0}, {'rows': 3}])
+        # 冲突片段使来源无法宣称完成；即使清单已收齐也不能返回状态。
+        self.assertFalse(fragments.complete)
+        self.assertEqual(fragments.receipt()['conflicts'], ['a'])
+        with self.assertRaises(ValueError):
+            fragments.states()
+
+
+if __name__ == '__main__':
+    unittest.main()
